@@ -55,8 +55,12 @@ export const getAllLabels = async () => {
   }
 };
 
+function isNotNull<T>(x: T): x is NonNullable<T> {
+  return x != null;
+}
+
 // Get attachments
-async function getAttachments(taskId: number) {
+async function getAttachments(taskId: number): Promise<{ content: string }[]> {
   const response = await axios({
     url: `https://api.todoist.com/rest/v1/comments`,
     method: "get",
@@ -68,13 +72,21 @@ async function getAttachments(taskId: number) {
     },
   });
 
-  return response.data
-    .map(
-      (i: {
-        attachment: { file_name: string; file_type: string; file_url: string };
-      }) => `[${i.attachment.file_name}](${i.attachment.file_url})`
-    )
-    .join(", ");
+  type Attachment = { file_name: string; file_type: string; file_url: string };
+  type Comment = {
+    id: number;
+    task_id: number;
+    posted: string; // e.g. "2022-09-10T19:57:47.358666Z"
+    content?: string;
+    attachment?: Attachment;
+  };
+  const comments: Comment[] = response.data;
+  return comments.map((comment) => {
+    return [
+      comment.content ? comment.content : null,
+      comment.attachment ? `![${comment.attachment.file_name}](${comment.attachment.file_url})`: null,
+    ].filter(isNotNull).join("\n");
+  }).map((content) => ({ content }));
 }
 
 // Mark tasks as complete in Todoist
@@ -151,7 +163,7 @@ export function removePrefixWhenAddingTodoistUrl(content: string) {
   return newContent;
 }
 
-export const pullTasks = async (condition: string) => {
+export const pullTasks = async (condition: string, pullDefaultAppend: boolean) => {
   let response;
 
   if (condition === "today") {
@@ -187,9 +199,7 @@ export const pullTasks = async (condition: string) => {
         tasksArr.push({
           todoist_id: t.id,
           project_id: t.project_id,
-          content: `TODO ${t.content} ${
-            t.comment_count ? `(${await getAttachments(t.id)})` : ""
-          }
+          content: `${pullDefaultAppend ? 'TODO ' : ''}${t.content}
 ${
   t.due
     ? `SCHEDULED: <${getScheduledDeadlineDateDay(new Date(t.due.date))}${
@@ -197,8 +207,8 @@ ${
       }>`
     : ""
 }
-${t.description ? "description:: " + t.description : ""}`,
-          children: [],
+${t.description ? t.description : ""}`,
+          children: t.comment_count ? await getAttachments(t.id) : [],
         });
       }
     }
@@ -221,7 +231,7 @@ ${t.description ? "description:: " + t.description : ""}`,
       for (let s of subTasks) {
         if (s.parent_id === m.todoist_id) {
           m.children.push({
-            content: `TODO ${s.content}
+            content: `${pullDefaultAppend ? 'TODO ' : ''}${s.content}
 ${
   s.due
     ? `SCHEDULED: <${getScheduledDeadlineDateDay(new Date(s.due.date))}${
@@ -229,7 +239,7 @@ ${
       }>`
     : ""
 }
-${s.description ? "description:: " + s.description : ""}`,
+${s.description ? s.description : ""}`,
           });
         }
         continue;

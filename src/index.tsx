@@ -68,7 +68,7 @@ const main = async () => {
       let newBlockContent = currBlk.content
 
       if (appendTodoistUrl === "Link content") {
-        newBlockContent = `${removePrefixWhenAddingTodoistUrl(currBlk.content)}(${taskUrl})`
+        newBlockContent = `**Task:** ${removePrefixWhenAddingTodoistUrl(currBlk.content)}(${taskUrl})`
       }
 
       if (appendTodoistUrl === "Append link") {
@@ -76,7 +76,7 @@ const main = async () => {
       }
       await logseq.Editor.updateBlock(
         currBlk.uuid,
-        newBlockContent
+        newBlockContent,
       );
 
       window.setTimeout(async function () {
@@ -91,6 +91,9 @@ const main = async () => {
 
   // Register pull command
   logseq.Editor.registerSlashCommand("todoist - pull tasks", async () => {
+    const {
+      pullDefaultAppend,
+    } = logseq.settings!;
     const id = getIdFromProjectAndLabel(logseq.settings!.pullDefaultProject);
 
     if (id.startsWith("Error")) {
@@ -98,7 +101,7 @@ const main = async () => {
         "Error getting default project ID. Do you want to pull TODAY's tasks instead?"
       );
     } else {
-      await insertTasksIntoLogseq(id);
+      await insertTasksIntoLogseq(id, pullDefaultAppend);
     }
   });
 
@@ -106,7 +109,10 @@ const main = async () => {
   logseq.Editor.registerSlashCommand(
     `todoist - pull today's tasks`,
     async () => {
-      await insertTasksIntoLogseq("today");
+      const {
+        pullDefaultAppend,
+      } = logseq.settings!;
+      await insertTasksIntoLogseq("today", pullDefaultAppend);
     }
   );
 };

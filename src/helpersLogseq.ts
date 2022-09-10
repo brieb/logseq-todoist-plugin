@@ -1,7 +1,7 @@
 import { BlockEntity } from "@logseq/libs/dist/LSPlugin.user";
 import { clearTasks, getProjectName, pullTasks } from "./helpersTodoist";
 
-export async function insertTasksIntoLogseq(condition: string) {
+export async function insertTasksIntoLogseq(condition: string, pullDefaultAppend: boolean) {
   let tasksContentArr: { tasksArr: any[]; tasksIdArr: any[] };
 
   if (condition !== "today" && logseq.settings!.pullDefaultProject === "---") {
@@ -12,7 +12,7 @@ export async function insertTasksIntoLogseq(condition: string) {
     return;
   }
 
-  tasksContentArr = await pullTasks(condition);
+  tasksContentArr = await pullTasks(condition, pullDefaultAppend);
 
   if (tasksContentArr.tasksArr.length === 0) {
     logseq.App.showMsg(
