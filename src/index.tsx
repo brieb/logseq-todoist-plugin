@@ -26,6 +26,7 @@ const main = async () => {
       sendDefaultDeadline,
       appendLogseqUri,
       appendTodoistUrl,
+      appUrl,
     } = logseq.settings!;
 
     const currGraphName = (await logseq.App.getCurrentGraph())?.name ?? "logseq"
@@ -62,15 +63,16 @@ const main = async () => {
         ];
 
       const sendResponse = await sendTaskFunction(data);
+      const taskUrl = appUrl ? `todoist://task?id=${sendResponse.id}` : sendResponse.url;
 
       let newBlockContent = currBlk.content
 
       if (appendTodoistUrl === "Link content") {
-        newBlockContent = `${removePrefixWhenAddingTodoistUrl(currBlk.content)}(${sendResponse.url})`
+        newBlockContent = `${removePrefixWhenAddingTodoistUrl(currBlk.content)}(${taskUrl})`
       }
 
       if (appendTodoistUrl === "Append link") {
-        newBlockContent = `${currBlk.content} [(todoist)](${sendResponse.url})`
+        newBlockContent = `${currBlk.content} [(todoist)](${taskUrl})`
       }
       await logseq.Editor.updateBlock(
         currBlk.uuid,

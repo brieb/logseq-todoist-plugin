@@ -125,6 +125,14 @@ export const callSettings = async () => {
       enumChoices: appendTodoistUrlOptions,
       default: appendTodoistUrlDefault,
     },
+    {
+      key: "appUrl",
+      title: "Use Todoist app URL instead of website URL",
+      description:
+        "If enabled, Todoist urls added will open the Todoist application instead of the website.",
+      type: "boolean",
+      default: false,
+    },
   ];
   logseq.useSettingsSchema(settings);
 };
